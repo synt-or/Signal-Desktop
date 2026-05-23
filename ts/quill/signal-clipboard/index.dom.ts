@@ -208,13 +208,8 @@ const STYLE_TO_QUILL_KEY: Partial<Record<BodyRange.Style, string>> = {
   [BodyRange.Style.STRIKETHROUGH]: QuillFormattingStyle.strike,
 };
 
-function attrsEqual(a: Record<string, true>, b: Record<string, true>): boolean {
-  const ka = Object.keys(a);
-  const kb = Object.keys(b);
-  if (ka.length !== kb.length) return false;
-  for (const k of ka) if (!(k in b)) return false;
-  return true;
-}
+const attrKey = (a: Record<string, true>): string =>
+  Object.keys(a).sort().join('|');
 
 function buildDelta(
   text: string,
@@ -240,14 +235,12 @@ function buildDelta(
 
   let i = 0;
   while (i < text.length) {
+    const mdAttrs = charAttrs[i] ?? {};
+    const k = attrKey(mdAttrs);
     let j = i + 1;
-    while (
-      j < text.length &&
-      attrsEqual(charAttrs[i] ?? {}, charAttrs[j] ?? {})
-    ) {
+    while (j < text.length && attrKey(charAttrs[j] ?? {}) === k) {
       j += 1;
     }
-    const mdAttrs = charAttrs[i] ?? {};
     const merged: Record<string, unknown> = { ...contextFormats, ...mdAttrs };
     const hasAttrs = Object.keys(merged).length > 0;
     delta.insert(text.slice(i, j), hasAttrs ? merged : undefined);

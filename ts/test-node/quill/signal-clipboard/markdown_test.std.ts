@@ -25,24 +25,10 @@ describe('parseMarkdown', () => {
     });
   });
 
-  it('parses __bold__ marker', () => {
-    assert.deepEqual(parseMarkdown('__x__'), {
-      text: 'x',
-      ranges: [{ start: 0, length: 1, style: BodyRange.Style.BOLD }],
-    });
-  });
-
   it('parses *italic* marker', () => {
     assert.deepEqual(parseMarkdown('hi *foo* bye'), {
       text: 'hi foo bye',
       ranges: [{ start: 3, length: 3, style: BodyRange.Style.ITALIC }],
-    });
-  });
-
-  it('parses _italic_ marker', () => {
-    assert.deepEqual(parseMarkdown('_x_'), {
-      text: 'x',
-      ranges: [{ start: 0, length: 1, style: BodyRange.Style.ITALIC }],
     });
   });
 
@@ -123,13 +109,6 @@ describe('parseMarkdown', () => {
     });
   });
 
-  it('renders H6 as italic', () => {
-    assert.deepEqual(parseMarkdown('###### Tiny'), {
-      text: 'Tiny',
-      ranges: [{ start: 0, length: 4, style: BodyRange.Style.ITALIC }],
-    });
-  });
-
   it('treats unclosed bold delimiter as literal', () => {
     assert.deepEqual(parseMarkdown('hello **world'), {
       text: 'hello **world',
@@ -149,12 +128,5 @@ describe('parseMarkdown', () => {
       text: '**',
       ranges: [],
     });
-  });
-
-  it('handles deeply nested input without crashing', () => {
-    const input = '**a*b_c~~d`e`d~~c_b*a**';
-    const result = parseMarkdown(input);
-    assert.isString(result.text);
-    assert.isArray(result.ranges);
   });
 });

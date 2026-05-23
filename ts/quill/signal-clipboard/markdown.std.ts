@@ -9,27 +9,19 @@ const MAX_NESTING_DEPTH = 5;
 
 export type FormattingRange = BodyRange<BodyRange.Formatting>;
 
-export type ParsedMarkdown = Readonly<{
-  text: string;
-  ranges: ReadonlyArray<FormattingRange>;
-}>;
-
-type InlineRule = Readonly<{
-  delim: string;
-  style: BodyRange.Style;
-  recursive: boolean;
-}>;
-
-const INLINE_RULES: ReadonlyArray<InlineRule> = [
+const INLINE_RULES = [
   { delim: '`', style: BodyRange.Style.MONOSPACE, recursive: false },
   { delim: '~~', style: BodyRange.Style.STRIKETHROUGH, recursive: true },
   { delim: '**', style: BodyRange.Style.BOLD, recursive: true },
   { delim: '__', style: BodyRange.Style.BOLD, recursive: true },
   { delim: '*', style: BodyRange.Style.ITALIC, recursive: true },
   { delim: '_', style: BodyRange.Style.ITALIC, recursive: true },
-];
+] as const;
 
-export function parseMarkdown(input: string): ParsedMarkdown {
+export function parseMarkdown(input: string): {
+  text: string;
+  ranges: ReadonlyArray<FormattingRange>;
+} {
   if (input.length === 0) {
     return { text: '', ranges: [] };
   }
@@ -65,39 +57,22 @@ export function parseMarkdown(input: string): ParsedMarkdown {
     const hm = line.match(/^(#{1,6}) (.+)$/);
     if (hm) {
       const level = (hm[1] ?? '').length;
-      const content = hm[2] ?? '';
-      if (level === 1) {
-        const upper = content.toUpperCase();
-        push(upper);
-        push('═'.repeat(upper.length));
-      } else if (level === 2) {
+      const content = level === 1 ? (hm[2] ?? '').toUpperCase() : (hm[2] ?? '');
+      if (level >= 2) {
         ranges.push({
           start: pos,
           length: content.length,
-          style: BodyRange.Style.BOLD,
+          style: level <= 3 ? BodyRange.Style.BOLD : BodyRange.Style.ITALIC,
         });
-        push(content);
-        push('─'.repeat(content.length));
-      } else if (level === 3) {
-        ranges.push({
-          start: pos,
-          length: content.length,
-          style: BodyRange.Style.BOLD,
-        });
-        push(content);
-      } else {
-        ranges.push({
-          start: pos,
-          length: content.length,
-          style: BodyRange.Style.ITALIC,
-        });
-        push(content);
       }
+      push(content);
+      if (level === 1) push('═'.repeat(content.length));
+      else if (level === 2) push('─'.repeat(content.length));
       continue;
     }
 
     const sub = parseInline(line, pos, 0);
-    for (const r of sub.ranges) ranges.push(r);
+    ranges.push(...sub.ranges);
     push(sub.text);
   }
 
@@ -135,7 +110,7 @@ function parseInline(
       if (rule.recursive) {
         const sub = parseInline(inner, start, depth + 1);
         ranges.push({ start, length: sub.text.length, style: rule.style });
-        for (const r of sub.ranges) ranges.push(r);
+        ranges.push(...sub.ranges);
         result += sub.text;
       } else {
         ranges.push({ start, length: inner.length, style: rule.style });
