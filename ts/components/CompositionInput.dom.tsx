@@ -737,6 +737,7 @@ export function CompositionInput(props: Props): ReactElement {
     () => () => {
       const emojiCompletion = emojiCompletionRef.current;
       const mentionCompletion = mentionCompletionRef.current;
+      const signalClipboard = quillRef.current?.getModule('signalClipboard');
 
       if (emojiCompletion !== undefined) {
         emojiCompletion.destroy();
@@ -744,6 +745,10 @@ export function CompositionInput(props: Props): ReactElement {
 
       if (mentionCompletion !== undefined) {
         mentionCompletion.destroy();
+      }
+
+      if (signalClipboard instanceof SignalClipboard) {
+        signalClipboard.destroy();
       }
     },
     []

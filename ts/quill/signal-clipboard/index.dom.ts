@@ -39,10 +39,10 @@ export class SignalClipboard {
     this.#cutHandler = e => this.onCaptureCut(e);
     this.#keydownHandler = createKeybindingsHandler({
       '$mod+Alt+V': event => {
-        const selection = this.quill.getSelection();
-        if (selection == null) return;
+        if (this.options.isDisabled) return;
+        if (this.quill.getSelection() == null) return;
         event.preventDefault();
-        void this.#insertFromClipboard(selection);
+        void this.#insertFromClipboard();
       },
     });
 
@@ -148,8 +148,10 @@ export class SignalClipboard {
     let clipboardDelta: Delta;
     if (signal) {
       clipboardDelta = clipboard.convert({ html: signal }, formats);
-    } else if (parsed && parsed.ranges.length > 0) {
-      clipboardDelta = buildDelta(parsed.text, parsed.ranges, formats);
+    } else if (parsed && (parsed.ranges.length > 0 || parsed.text !== text)) {
+      clipboardDelta = new Delta(
+        insertEmojiOps(buildDelta(parsed.text, parsed.ranges, formats).ops, {})
+      );
     } else {
       clipboardDelta = new Delta(
         insertEmojiOps(clipboard.convert({ text }, formats).ops, {})
@@ -173,10 +175,7 @@ export class SignalClipboard {
     }
   }
 
-  async #insertFromClipboard(selection: {
-    readonly index: number;
-    readonly length: number;
-  }): Promise<void> {
+  async #insertFromClipboard(): Promise<void> {
     let text: string;
     try {
       text = await navigator.clipboard.readText();
@@ -184,11 +183,16 @@ export class SignalClipboard {
       log.warn('clipboard.readText failed', Errors.toLogFormat(error));
       return;
     }
+    if (text === '') return;
     setTimeout(() => {
+      const selection = this.quill.getSelection();
+      if (selection == null) return;
+      const formats =
+        selection.length === 0 ? this.quill.getFormat(selection.index) : {};
       const delta = new Delta()
         .retain(selection.index)
         .delete(selection.length)
-        .insert(text);
+        .insert(text, formats);
       this.quill.updateContents(delta, 'user');
       this.quill.setSelection(selection.index + text.length, 0, 'silent');
       this.quill.scrollSelectionIntoView();
