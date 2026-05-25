@@ -16,7 +16,6 @@ const PERMISSIONS: Record<string, boolean> = {
   fullscreen: true, // required to show videos in full-screen
   notifications: true, // required to show OS notifications for new messages
   'clipboard-sanitized-write': true, // required to copy text into clipboard
-  'clipboard-read': true, // required for Cmd+Alt+V raw-paste in composer
 
   // Off by default, can be enabled by user
   media: false, // required for access to microphone and camera, used for voice notes and calling

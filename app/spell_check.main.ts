@@ -212,7 +212,12 @@ export const setup = (
       ) {
         template.push({
           label: i18n('icu:editMenuPasteAndMatchStyle'),
-          role: 'pasteAndMatchStyle',
+          click: () => {
+            browserWindow.webContents.send(
+              'signal-clipboard:raw-paste',
+              clipboard.readText()
+            );
+          },
         });
       }
 

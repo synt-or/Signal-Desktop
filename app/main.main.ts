@@ -1249,6 +1249,13 @@ function setupAsNewDevice() {
   }
 }
 
+function rawPaste() {
+  mainWindow?.webContents.send(
+    'signal-clipboard:raw-paste',
+    clipboard.readText()
+  );
+}
+
 function setupAsStandalone() {
   if (mainWindow) {
     mainWindow.webContents.send('set-up-as-standalone');
@@ -2432,6 +2439,7 @@ function setupMenu(options?: Partial<CreateTemplateOptionsType>) {
     openJoinTheBeta,
     openReleaseNotes,
     openSupportPage,
+    rawPaste,
     setupAsNewDevice,
     setupAsStandalone,
     stageLocalBackupForImport,

@@ -4,7 +4,6 @@
 import type Quill from '@signalapp/quill-cjs';
 import { Delta } from '@signalapp/quill-cjs';
 import { deleteRange } from '@signalapp/quill-cjs/modules/keyboard.js';
-import { createKeybindingsHandler } from 'tinykeys';
 
 import {
   FormattingMenu,
@@ -13,11 +12,9 @@ import {
 import { insertEmojiOps } from '../util.dom.ts';
 import { createEventHandler } from './util.dom.ts';
 import { BodyRange } from '../../types/BodyRange.std.ts';
-import { createLogger } from '../../logging/log.std.ts';
-import * as Errors from '../../types/errors.std.ts';
 import { parseMarkdown, type FormattingRange } from './markdown.std.ts';
 
-const log = createLogger('signal-clipboard');
+export const RAW_PASTE_EVENT = 'signal-clipboard:raw-paste';
 
 type ClipboardOptions = Readonly<{
   isDisabled: boolean;
@@ -29,7 +26,7 @@ export class SignalClipboard {
 
   readonly #pasteHandler: (event: ClipboardEvent) => void;
   readonly #cutHandler: (event: ClipboardEvent) => void;
-  readonly #keydownHandler: (event: KeyboardEvent) => void;
+  readonly #rawPasteHandler: (text: string) => void;
 
   constructor(quill: Quill, options: ClipboardOptions) {
     this.quill = quill;
@@ -37,18 +34,16 @@ export class SignalClipboard {
 
     this.#pasteHandler = e => this.onCapturePaste(e);
     this.#cutHandler = e => this.onCaptureCut(e);
-    this.#keydownHandler = createKeybindingsHandler({
-      '$mod+Alt+V': event => {
-        if (this.options.isDisabled) return;
-        if (this.quill.getSelection() == null) return;
-        event.preventDefault();
-        void this.#insertFromClipboard();
-      },
-    });
+    this.#rawPasteHandler = text => {
+      if (this.options.isDisabled) return;
+      const selection = this.quill.getSelection();
+      if (selection == null || text === '') return;
+      this.#insertRawText(text, selection);
+    };
 
     this.quill.root.addEventListener('paste', this.#pasteHandler);
     this.quill.root.addEventListener('cut', this.#cutHandler);
-    this.quill.root.addEventListener('keydown', this.#keydownHandler);
+    window.Whisper.events.on(RAW_PASTE_EVENT, this.#rawPasteHandler);
   }
 
   updateOptions(options: Partial<ClipboardOptions>): void {
@@ -58,7 +53,7 @@ export class SignalClipboard {
   destroy(): void {
     this.quill.root.removeEventListener('paste', this.#pasteHandler);
     this.quill.root.removeEventListener('cut', this.#cutHandler);
-    this.quill.root.removeEventListener('keydown', this.#keydownHandler);
+    window.Whisper.events.off(RAW_PASTE_EVENT, this.#rawPasteHandler);
   }
 
   onCaptureCut(event: ClipboardEvent): void {
@@ -175,18 +170,11 @@ export class SignalClipboard {
     }
   }
 
-  async #insertFromClipboard(): Promise<void> {
-    let text: string;
-    try {
-      text = await navigator.clipboard.readText();
-    } catch (error) {
-      log.warn('clipboard.readText failed', Errors.toLogFormat(error));
-      return;
-    }
-    if (text === '') return;
+  #insertRawText(
+    text: string,
+    selection: { readonly index: number; readonly length: number }
+  ): void {
     setTimeout(() => {
-      const selection = this.quill.getSelection();
-      if (selection == null) return;
       const formats =
         selection.length === 0 ? this.quill.getFormat(selection.index) : {};
       const delta = new Delta()

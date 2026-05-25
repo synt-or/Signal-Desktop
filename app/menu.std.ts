@@ -33,6 +33,7 @@ export const createTemplate = (
     openReleaseNotes,
     openSupportPage,
     platform,
+    rawPaste,
     setupAsNewDevice,
     setupAsStandalone,
     stageLocalBackupForImport,
@@ -96,8 +97,9 @@ export const createTemplate = (
           label: i18n('icu:editMenuPaste'),
         },
         {
-          role: 'pasteAndMatchStyle',
           label: i18n('icu:editMenuPasteAndMatchStyle'),
+          accelerator: 'CommandOrControl+Shift+V',
+          click: rawPaste,
         },
         {
           role: 'delete',

@@ -22,6 +22,7 @@ export type MenuActionsType = Readonly<{
   openJoinTheBeta: () => unknown;
   openReleaseNotes: () => unknown;
   openSupportPage: () => unknown;
+  rawPaste: () => unknown;
   setupAsNewDevice: () => unknown;
   setupAsStandalone: () => unknown;
   showAbout: () => unknown;

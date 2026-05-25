@@ -21,6 +21,7 @@ const openForums = stub();
 const openJoinTheBeta = stub();
 const openReleaseNotes = stub();
 const openSupportPage = stub();
+const rawPaste = stub();
 const setupAsNewDevice = stub();
 const setupAsStandalone = stub();
 const showAbout = stub();
@@ -44,7 +45,11 @@ const getExpectedEditMenu = (
     { label: 'Cut', role: 'cut' },
     { label: 'Copy', role: 'copy' },
     { label: 'Paste', role: 'paste' },
-    { label: 'Paste and Match Style', role: 'pasteAndMatchStyle' },
+    {
+      label: 'Paste and Match Style',
+      accelerator: 'CommandOrControl+Shift+V',
+      click: rawPaste,
+    },
     { label: 'Delete', role: 'delete' },
     { label: 'Select All', role: 'selectAll' },
     ...(includeSpeech
@@ -232,6 +237,7 @@ describe('createTemplate', () => {
     openJoinTheBeta,
     openReleaseNotes,
     openSupportPage,
+    rawPaste,
     setupAsNewDevice,
     setupAsStandalone,
     showAbout,

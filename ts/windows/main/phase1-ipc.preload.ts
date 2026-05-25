@@ -300,6 +300,10 @@ ipc.on('open-settings-tab', () => {
   window.Whisper.events.emit('openSettingsTab');
 });
 
+ipc.on('signal-clipboard:raw-paste', (_event, text: string) => {
+  window.Whisper.events.emit('signal-clipboard:raw-paste', text);
+});
+
 ipc.on('set-up-as-new-device', () => {
   window.Whisper.events.emit('setupAsNewDevice');
 });
