@@ -129,4 +129,53 @@ describe('parseMarkdown', () => {
       ranges: [],
     });
   });
+
+  it('renders bullet list with • marker', () => {
+    assert.deepEqual(parseMarkdown('- foo\n- bar'), {
+      text: '• foo\n• bar',
+      ranges: [],
+    });
+  });
+
+  it('uses ◦ for indented bullet items', () => {
+    assert.deepEqual(parseMarkdown('- top\n  - nested'), {
+      text: '• top\n  ◦ nested',
+      ranges: [],
+    });
+  });
+
+  it('renders numbered list with bold prefix', () => {
+    assert.deepEqual(parseMarkdown('1. foo'), {
+      text: '1. foo',
+      ranges: [{ start: 0, length: 2, style: BodyRange.Style.BOLD }],
+    });
+  });
+
+  it('aligns multi-digit numbered list items', () => {
+    const result = parseMarkdown('1. foo\n10. bar');
+    assert.equal(result.text, ' 1. foo\n10. bar');
+    assert.deepEqual(result.ranges, [
+      { start: 1, length: 2, style: BodyRange.Style.BOLD },
+      { start: 8, length: 3, style: BodyRange.Style.BOLD },
+    ]);
+  });
+
+  it('renders table with bold headers and monospace block', () => {
+    const input = '| Nom | Age |\n|-----|-----|\n| Alex | 30 |';
+    const result = parseMarkdown(input);
+    assert.equal(result.text, '| Nom  | Age |\n|------|-----|\n| Alex | 30  |');
+    assert.deepEqual(result.ranges, [
+      { start: 2, length: 3, style: BodyRange.Style.BOLD },
+      { start: 9, length: 3, style: BodyRange.Style.BOLD },
+      { start: 0, length: 44, style: BodyRange.Style.MONOSPACE },
+    ]);
+  });
+
+  it('aligns table columns to widest cell', () => {
+    const input =
+      '| Nom | Ville | Statut |\n|---|---|---|\n| Alex | Paris | Actif |\n| Mohammed | Lyon | Inactif |';
+    const { text } = parseMarkdown(input);
+    assert.include(text, '| Alex     | Paris | Actif   |');
+    assert.include(text, '| Mohammed | Lyon  | Inactif |');
+  });
 });
