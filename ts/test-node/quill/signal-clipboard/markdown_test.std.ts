@@ -53,6 +53,20 @@ describe('parseMarkdown', () => {
     });
   });
 
+  it('matches N-backtick fences and strips one bordering space', () => {
+    assert.deepEqual(parseMarkdown('`` `a` ``'), {
+      text: '`a`',
+      ranges: [{ start: 0, length: 3, style: BodyRange.Style.MONOSPACE }],
+    });
+  });
+
+  it('renders a literal backtick via the double-backtick fence', () => {
+    assert.deepEqual(parseMarkdown('`` ` ``'), {
+      text: '`',
+      ranges: [{ start: 0, length: 1, style: BodyRange.Style.MONOSPACE }],
+    });
+  });
+
   it('parses nested bold containing italic', () => {
     assert.deepEqual(parseMarkdown('**foo *bar* baz**'), {
       text: 'foo bar baz',

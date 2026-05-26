@@ -10,13 +10,39 @@ const MAX_NESTING_DEPTH = 5;
 export type FormattingRange = BodyRange<BodyRange.Formatting>;
 
 const INLINE_RULES = [
-  { delim: '`', style: BodyRange.Style.MONOSPACE, recursive: false },
   { delim: '~~', style: BodyRange.Style.STRIKETHROUGH, recursive: true },
   { delim: '**', style: BodyRange.Style.BOLD, recursive: true },
   { delim: '__', style: BodyRange.Style.BOLD, recursive: true },
   { delim: '*', style: BodyRange.Style.ITALIC, recursive: true },
   { delim: '_', style: BodyRange.Style.ITALIC, recursive: true },
 ] as const;
+
+function matchCodeSpan(
+  text: string,
+  from: number
+): { content: string; end: number } | null {
+  let openEnd = from;
+  while (openEnd < text.length && text[openEnd] === '`') openEnd += 1;
+  const openLen = openEnd - from;
+  let scan = openEnd;
+  while (scan < text.length) {
+    if (text[scan] !== '`') {
+      scan += 1;
+      continue;
+    }
+    let runEnd = scan;
+    while (runEnd < text.length && text[runEnd] === '`') runEnd += 1;
+    if (runEnd - scan === openLen) {
+      let inner = text.slice(openEnd, scan);
+      if (inner.startsWith(' ') && inner.endsWith(' ') && inner.trim() !== '') {
+        inner = inner.slice(1, -1);
+      }
+      return { content: inner, end: runEnd };
+    }
+    scan = runEnd;
+  }
+  return null;
+}
 
 export function parseMarkdown(input: string): {
   text: string;
@@ -257,6 +283,19 @@ function parseInline(
   const ranges: Array<FormattingRange> = [];
   let i = 0;
   while (i < text.length) {
+    if (text[i] === '`') {
+      const code = matchCodeSpan(text, i);
+      if (code != null) {
+        ranges.push({
+          start: baseOffset + result.length,
+          length: code.content.length,
+          style: BodyRange.Style.MONOSPACE,
+        });
+        result += code.content;
+        i = code.end;
+        continue;
+      }
+    }
     let matched = false;
     for (const rule of INLINE_RULES) {
       if (!text.startsWith(rule.delim, i)) continue;
