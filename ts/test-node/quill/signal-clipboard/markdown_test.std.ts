@@ -81,17 +81,20 @@ describe('parseMarkdown', () => {
     ]);
   });
 
-  it('renders H1 as uppercase with ═ underline (no range)', () => {
+  it('renders H1 as uppercase + ═ underline, wrapped in monospace so chars align', () => {
     assert.deepEqual(parseMarkdown('# Hello'), {
       text: 'HELLO\n═════',
-      ranges: [],
+      ranges: [{ start: 0, length: 11, style: BodyRange.Style.MONOSPACE }],
     });
   });
 
-  it('renders H2 as bold with ─ underline', () => {
+  it('renders H2 as bold + ─ underline, wrapped in monospace', () => {
     assert.deepEqual(parseMarkdown('## Section'), {
       text: 'Section\n───────',
-      ranges: [{ start: 0, length: 7, style: BodyRange.Style.BOLD }],
+      ranges: [
+        { start: 0, length: 7, style: BodyRange.Style.BOLD },
+        { start: 0, length: 15, style: BodyRange.Style.MONOSPACE },
+      ],
     });
   });
 

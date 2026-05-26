@@ -58,6 +58,7 @@ export function parseMarkdown(input: string): {
     if (hm) {
       const level = (hm[1] ?? '').length;
       const content = level === 1 ? (hm[2] ?? '').toUpperCase() : (hm[2] ?? '');
+      const headerStart = pos;
       if (level >= 2) {
         ranges.push({
           start: pos,
@@ -68,6 +69,13 @@ export function parseMarkdown(input: string): {
       push(content);
       if (level === 1) push('═'.repeat(content.length));
       else if (level === 2) push('─'.repeat(content.length));
+      if (level <= 2) {
+        ranges.push({
+          start: headerStart,
+          length: content.length * 2 + 1,
+          style: BodyRange.Style.MONOSPACE,
+        });
+      }
       continue;
     }
 
